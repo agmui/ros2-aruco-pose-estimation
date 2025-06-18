@@ -57,6 +57,26 @@ from geometry_msgs.msg import PoseArray
 from aruco_interfaces.msg import ArucoMarkers
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 
+def load_custom_arcuo_tags(filename):
+    import csv
+
+    NUM_TAGS = 44
+
+    aruco_dict = cv2.aruco.Dictionary()
+    aruco_dict.bytesList = np.empty(shape=(NUM_TAGS, 4, 4), dtype=np.uint8)
+    aruco_dict.markerSize = 5
+    aruco_dict.maxCorrectionBits = 0
+
+    with open(filename) as csvfile:
+        csv_obj = csv.reader(csvfile)
+        for tag_id in range(NUM_TAGS):
+            mybits = np.empty(shape=(5, 5), dtype=np.uint8)
+            for l in range(5):
+                row = next(csv_obj)
+                mybits[l] = np.array(list(map(int,row)))
+            aruco_dict.bytesList[tag_id] = cv2.aruco.Dictionary.getByteListFromBits(mybits)
+    return aruco_dict
+
 
 class ArucoNode(rclpy.node.Node):
     def __init__(self):
@@ -121,7 +141,7 @@ class ArucoNode(rclpy.node.Node):
         # code for updated version of cv2 (4.7.0)
         self.aruco_dictionary = cv2.aruco.getPredefinedDictionary(dictionary_id)
         self.aruco_parameters = cv2.aruco.DetectorParameters()
-        self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dictionary, self.aruco_parameters)
+        self.aruco_dictionary = load_custom_arcuo_tags('/ROS2/sentry_ws/src/sentry_pkg/sentry_pkg/rm_visual_tags.csv')#cv2.aruco.getPredefinedDictionary(dictionary_id)
 
         # old code version
         # self.aruco_dictionary = cv2.aruco.Dictionary_get(dictionary_id)
